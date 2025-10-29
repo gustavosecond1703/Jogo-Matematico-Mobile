@@ -1,0 +1,509 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Desafio: Volume e Área</title>
+<style>
+  :root{
+    --bg-start:#000000; --bg-end:#071043;
+    --muted:#9aa7bf; --accent:#7c3aed; --accent-2:#06b6d4;
+    --card-bg: rgba(255,255,255,0.02);
+    --modal-bg: rgba(6,8,12,0.96);
+    --overlay: rgba(2,6,23,0.85);
+    --glass: rgba(255,255,255,0.02);
+  }
+  html,body{height:100%;margin:0;font-family:Inter,system-ui,Arial,sans-serif;
+    background:linear-gradient(180deg,var(--bg-start),var(--bg-end)); color:#e6eef8; -webkit-font-smoothing:antialiased;}
+  .page-title{position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:1200;
+    color:#eaf2ff;font-weight:800;font-size:20px;padding:8px 18px;border-radius:10px;
+    background: var(--glass); box-shadow:0 8px 20px rgba(2,6,23,0.4);}
+  .app{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;}
+  .game{width:100%;max-width:1200px;height:calc(100vh - 44px);border-radius:14px;
+    background:linear-gradient(180deg,var(--card-bg),rgba(255,255,255,0.01));
+    box-shadow:0 30px 80px rgba(2,6,23,0.6);display:grid;grid-template-columns:1fr 340px;
+    gap:18px;padding:16px;box-sizing:border-box;overflow:hidden;}
+  header{grid-column:1/-1;display:flex;align-items:center;gap:12px;padding:6px 8px;}
+  .logo { width:56px;height:56px;border-radius:12px;overflow:hidden;flex:0 0 56px;display:flex;align-items:center;justify-content:center;background:transparent; }
+  .logo img{ display:block;width:56px;height:56px;object-fit:cover;border-radius:10px; }
+  .logo-fallback{ width:56px;height:56px;border-radius:10px;background:linear-gradient(135deg,#2c3a7a,#7c3aed); display:flex;align-items:center;justify-content:center;font-weight:800;color:white;font-size:16px;}
+  .header-center{ flex:1; display:flex;flex-direction:column;align-items:center;justify-content:center; text-align:center; gap:2px; }
+  main{padding:10px 12px;display:flex;flex-direction:column;gap:10px;overflow:auto;}
+  aside{padding:12px;display:flex;flex-direction:column;gap:12px;overflow:auto;}
+  .big-card{border-radius:10px;padding:12px;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.015));}
+  .stats{display:flex;gap:8px;margin-bottom:10px;}
+  .stat{flex:1;background: rgba(255,255,255,0.02);padding:10px;border-radius:8px;text-align:center;}
+  .stat small{display:block;color:var(--muted);font-size:12px;}
+  .stat strong{display:block;font-size:18px;margin-top:4px;}
+  .question-title{font-weight:800;font-size:18px;color:#dbeafe;margin-bottom:6px;text-align:left;}
+  .hint{color:var(--muted);font-size:13px;margin-bottom:8px;text-align:left;}
+  .net{width:100%;height:300px;border-radius:10px;background:linear-gradient(180deg, rgba(255,255,255,0.006), rgba(255,255,255,0.01));display:flex;align-items:center;justify-content:center;border:1px dashed rgba(255,255,255,0.03);overflow:hidden;position:relative;}
+  .net img{
+    display:block !important;
+    width:auto !important;
+    height:86% !important;
+    max-height:240px !important;
+    max-width:340px !important;
+    object-fit:contain !important;
+    border-radius:8px;
+    box-shadow:0 12px 30px rgba(2,6,23,0.5);
+    opacity:0; transform:scale(0.98); transition:opacity .45s ease, transform .45s ease;
+  }
+  .net img.fade-in{ opacity:1 !important; transform:scale(1) !important; }
+  .params{color:var(--muted);margin-top:8px;font-size:14px;text-align:left;}
+  .input-row{display:flex;gap:8px;margin-top:12px;align-items:center;}
+  input[type=number]{flex:1;padding:12px;border-radius:10px;background: rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.03);color:#e6eef8;font-size:16px;}
+  .btn{padding:12px 14px;border-radius:10px;cursor:pointer;border:0;font-weight:800;font-size:15px;}
+  .btn-primary{background:linear-gradient(90deg,var(--accent),var(--accent-2));color:white;box-shadow:0 8px 18px rgba(12,12,24,0.45);}
+  .btn-primary:active{ transform: translateY(1px); box-shadow: 0 6px 14px rgba(12,12,24,0.35); }
+  .btn-ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted);padding:10px 12px;border-radius:8px;}
+  .message{color:var(--muted);font-size:13px;margin-top:8px;text-align:left;}
+  .overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:9999;opacity:0;pointer-events:none;transition:opacity .18s;}
+  .overlay.show{opacity:1;pointer-events:auto;}
+  .overlay.bg-dim{background:var(--overlay);}
+  .modal{width:820px;max-width:94%;border-radius:12px;padding:18px;background:var(--modal-bg);box-shadow:0 30px 90px rgba(2,6,23,0.8);color:#eaf2ff;text-align:center;max-height:92vh;overflow:auto;}
+  .modal h2{margin:0 0 12px 0;font-size:26px;}
+  .modal .gif-wrap{display:flex;align-items:center;justify-content:center;padding:8px 0;}
+  .modal img.welcome{ width:100%; max-width:640px; height:auto; max-height:360px; border-radius:10px; box-shadow:0 12px 40px rgba(2,6,23,0.6); display:block; }
+  .controls{display:flex;gap:12px;justify-content:center;margin-top:14px;flex-wrap:wrap;}
+  .small{font-size:13px;color:var(--muted);}
+  @media (max-width:860px){ .game{grid-template-columns:1fr 300px;} .net{height:260px;} .net img{max-height:220px;max-width:320px;} .modal img.welcome{ max-width:92%; max-height:260px; } .modal{padding:14px;} .page-title{font-size:18px;} }
+  /* MOBILE: empilha e aumenta toques */
+  @media (max-width:720px){
+    .game{ grid-template-columns: 1fr; height:auto; padding:12px; gap:12px; min-height:100vh; }
+    header{ padding:8px 6px; gap:10px; }
+    .question-title, .hint, .params, .message { text-align:center; }
+    .question-title{ font-size:20px; }
+    .net{ height:220px; }
+    .net img{ height:84%; max-height:200px; }
+    .stat small{font-size:11px;} .stat strong{font-size:16px;}
+    input[type=number]{ padding:14px; font-size:18px; }
+    .btn{ padding:14px 16px; font-size:16px; border-radius:10px; }
+    aside{ order: 3; }
+  }
+
+  /* animated icons */
+  .animated-icon { width:84px; height:84px; display:inline-block; vertical-align:middle; }
+  .animated-icon svg { width:100%; height:100%; display:block; }
+  .draw-path { stroke-dasharray: 1000; stroke-dashoffset: 1000; animation: draw 0.6s forwards cubic-bezier(.2,.9,.2,1); stroke-linecap: round; stroke-linejoin: round; }
+  .icon-bounce { transform-origin: center; animation: bounce 0.45s ease 0.6s both; }
+  .check-glow { opacity: 0; animation: glow 0.6s ease 0.7s forwards; filter: drop-shadow(0 6px 14px rgba(34,197,94,0.25)); }
+  .icon-shake { transform-origin: center; animation: shake 0.45s ease 0.5s both; }
+  .icon-bg-circle { transform-origin:center; opacity:0; animation: bgIn .45s forwards .05s; }
+  @keyframes draw { to { stroke-dashoffset: 0; } }
+  @keyframes bounce { 0% { transform: scale(0.85); } 60% { transform: scale(1.06); } 100% { transform: scale(1); } }
+  @keyframes glow { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+  @keyframes shake { 0% { transform: translateX(0) rotate(0deg); } 20% { transform: translateX(-6px) rotate(-8deg); } 40% { transform: translateX(6px) rotate(8deg); } 60% { transform: translateX(-4px) rotate(-6deg); } 80% { transform: translateX(4px) rotate(4deg); } 100% { transform: translateX(0) rotate(0deg); } }
+  @keyframes bgIn { to { opacity: 1; } }
+</style>
+</head>
+<body>
+
+  <div class="page-title">Desafio: Volume e Área</div>
+
+  <div class="app">
+    <div class="game" id="gameRoot" role="application" aria-label="Desafio de Volumes e Áreas">
+      <header>
+        <div class="logo" id="logoWrap"></div>
+        <div class="header-center"><!-- centered header; left intentionally minimal --></div>
+        <div style="width:56px"></div>
+      </header>
+
+      <main>
+        <div class="big-card">
+          <div class="stats" style="margin-bottom:8px;">
+            <div class="stat"><small>Tempo</small><strong id="timeLeft">90s</strong></div>
+            <div class="stat"><small>Nível</small><strong id="level">1</strong></div>
+            <div class="stat"><small>Pontuação</small><strong id="scoreDisplay">0</strong></div>
+          </div>
+
+          <div class="question-title" id="questionTitle">Nível 1: calcule o volume da Pirâmide (base quadrada)</div>
+          <div class="hint" id="solidHint">Dica: base quadrada</div>
+
+          <div class="net" id="netVisual" role="img" aria-label="Visual do sólido"></div>
+
+          <div class="params" id="paramList">Aresta: 3 cm</div>
+
+          <div class="input-row">
+            <input id="answerInput" type="number" placeholder="Digite o resultado (cm² ou cm³)" aria-label="Resposta" />
+            <button id="btnCheck" class="btn btn-primary">Verificar</button>
+          </div>
+
+          <div class="message" id="messageBox">Boa sorte! Acertos aumentam nível e adicionam tempo.</div>
+        </div>
+      </main>
+
+      <aside>
+        <div class="status-card big-card">
+          <strong>Status</strong>
+          <div class="small" id="statusMsg" style="margin-top:8px;color:var(--muted);">Pronto!</div>
+          <div style="margin-top:12px;" class="small">π = 3.14</div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- Intro modal -->
+  <div id="introOverlay" class="overlay bg-dim show" role="dialog" aria-modal="true" aria-labelledby="introTitle">
+    <div class="modal" role="document" aria-describedby="introText">
+      <h2 id="introTitle">Bem-vindo ao Desafio</h2>
+
+      <div class="gif-wrap">
+        <!-- welcome GIF: put sejabemvindo.gif in images/ -->
+        <img id="welcomeGif" class="welcome" src="" alt="Bem-vindo — Desafio" />
+      </div>
+
+      <p id="introText" style="color:var(--muted);margin-top:12px;">
+        Neste desafio você verá perguntas sobre Geometria Plana e Espacial. Quando estiver pronto clique em começar.
+      </p>
+
+      <div class="controls">
+        <button id="introStartBtn" class="btn btn-primary">Começar</button>
+        <button id="introRulesBtn" class="btn btn-primary">Regras & Controles</button>
+        <button id="introCreditsBtn" class="btn btn-primary">Criadores</button>
+      </div>
+
+      <div id="introRulesCard" style="display:none;margin-top:12px;text-align:left;color:var(--muted);">
+        <strong>Controles & Regras</strong>
+        <ul style="line-height:1.6;margin-top:8px;">
+          <li>Responda com número (cm² áreas, cm³ volumes).</li>
+          <li>Acertos: pontos = 15 × nível e +20s de tempo.</li>
+          <li>Erros: -5 pontos. Tolerância ≈ 2%.</li>
+          <li>π = 3.14 (valor exibido no canto do painel).</li>
+        </ul>
+        <div style="display:flex;gap:8px;justify-content:center;margin-top:8px;">
+          <button id="introBackBtn" class="btn btn-ghost">Voltar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Credits modal (solid) -->
+  <div id="creditsOverlay" class="overlay bg-dim" role="dialog" aria-modal="true" style="opacity:0;pointer-events:none;">
+    <div class="modal" role="document" aria-labelledby="creditsTitle">
+      <h2 id="creditsTitle">Criadores</h2>
+      <p style="margin-top:12px; font-size:16px; line-height:1.6; color:#dbeafe;">
+        Gustavo Lima<br/>Anthonny Gabriel<br/>João Guilherme
+      </p>
+      <div style="margin-top:14px;">
+        <button id="creditsCloseBtn" class="btn btn-primary">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Result modal -->
+  <div id="resultModalOverlay" class="overlay bg-dim" aria-hidden="true" role="dialog" aria-modal="true" style="opacity:0;pointer-events:none;">
+    <div class="modal" role="document" aria-labelledby="modalTitle">
+      <div id="modalIcon" class="modal-icon" aria-hidden="true"></div>
+      <h2 id="modalTitle">Parabéns!</h2>
+      <p id="modalText" class="big-answer">Acertou!</p>
+      <p id="modalDetail" style="color:var(--muted);margin-top:6px;"></p>
+      <pre id="modalFormula" class="formula" style="display:none;text-align:left;background:rgba(0,0,0,0.35);padding:10px;border-radius:8px;color:#e6eef8;"></pre>
+      <div style="margin-top:10px;color:var(--muted);" id="modalCountdown">Próxima em 15s</div>
+      <div class="controls" style="margin-top:12px;">
+        <button id="modalShowFormulaBtn" class="btn btn-primary">Mostrar fórmula</button>
+        <button id="modalOkBtn" class="btn btn-primary">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Game over modal -->
+  <div id="gameOverOverlay" class="overlay bg-dim" aria-hidden="true" role="dialog" aria-modal="true" style="opacity:0;pointer-events:none;">
+    <div class="modal" role="document" aria-labelledby="gameOverTitle">
+      <h2 id="gameOverTitle">⏰ Tempo esgotado!</h2>
+      <p id="finalScoreText" style="margin-top:8px;color:var(--muted)">Sua pontuação: 0</p>
+      <p id="finalSummary" style="margin-top:6px;color:var(--muted)"></p>
+      <div style="margin-top:14px;">
+        <button id="gameOverRestartBtn" class="btn btn-primary">Reiniciar</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* ====== Config & Data ====== */
+const INITIAL_TIME = 90; // seconds
+const TIME_BONUS = 20;
+const PI = 3.14;
+const DELAY_MS = 15000; // modal wait
+
+const SOLIDS = [
+  { id:'cube', type:'volume', name:'Cubo', hint:'6 faces quadradas', param:['aresta'], volume: a => a**3 },
+  { id:'rectprism', type:'volume', name:'Paralelepípedo', hint:'Faces retangulares', param:['comprimento','largura','altura'], volume:(l,w,h)=> l*w*h },
+  { id:'cylinder', type:'volume', name:'Cilindro', hint:'2 bases circulares', param:['raio','altura'], volume:(r,h)=> PI * r * r * h },
+  { id:'cone', type:'volume', name:'Cone', hint:'1 base circular + vértice', param:['raio','altura'], volume:(r,h)=> (PI * r * r * h)/3 },
+  { id:'pyramid', type:'volume', name:'Pirâmide (base quadrada)', hint:'Base quadrada + faces triangulares', param:['aresta da base','altura'], volume:(a,h)=> (a*a*h)/3 },
+  { id:'sphere', type:'volume', name:'Esfera', hint:'Superfície contínua', param:['raio'], volume: r => (4/3) * PI * r * r * r }
+];
+const AREAS = [
+  { id:'square', type:'area', name:'Quadrado', param:['aresta'], area: a => a*a },
+  { id:'rectangle', type:'area', name:'Retângulo', param:['comprimento','largura'], area:(l,w) => l*w },
+  { id:'circle', type:'area', name:'Círculo', param:['raio'], area: r => PI * r * r },
+  { id:'triangle', type:'area', name:'Triângulo', param:['base','altura'], area:(b,h) => (b*h)/2 }
+];
+
+const paramNamesMap = { 'aresta':'Aresta','comprimento':'Comprimento','largura':'Largura','altura':'Altura','raio':'Raio','aresta da base':'Aresta da Base','base':'Base' };
+const IMAGE_MAP = {
+  cube:'cube.png', rectprism:'rectprism.png', cylinder:'cylinder.png', cone:'cone.png', pyramid:'pyramid.png', sphere:'sphere.png',
+  square:'square.png', rectangle:'rectangle.png', circle:'circle.png', triangle:'triangle.png'
+};
+
+/* ====== State & refs ====== */
+let level=1, timeLeft=INITIAL_TIME, score=0;
+let current=null, currentMode='volume', params=[];
+let running=false, pausedByModal=false, nextTimeout=null, modalInterval=null;
+let totalQuestions=0, correctCount=0, incorrectCount=0;
+const perShapeErrors={};
+
+const timeLeftEl = document.getElementById('timeLeft'), levelEl=document.getElementById('level'), scoreEl=document.getElementById('scoreDisplay');
+const qTitle=document.getElementById('questionTitle'), sHint=document.getElementById('solidHint'), pList=document.getElementById('paramList'), net=document.getElementById('netVisual');
+const answerInput=document.getElementById('answerInput'), btnCheck=document.getElementById('btnCheck'), messageBox=document.getElementById('messageBox'), statusMsg=document.getElementById('statusMsg');
+
+const introOverlay=document.getElementById('introOverlay'), introStartBtn=document.getElementById('introStartBtn'), introRulesBtn=document.getElementById('introRulesBtn'), introCreditsBtn=document.getElementById('introCreditsBtn'), introRulesCard=document.getElementById('introRulesCard'), introBackBtn=document.getElementById('introBackBtn');
+const creditsOverlay=document.getElementById('creditsOverlay'), creditsCloseBtn=document.getElementById('creditsCloseBtn');
+
+const resultOverlay=document.getElementById('resultModalOverlay'), modalIcon=document.getElementById('modalIcon'), modalTitle=document.getElementById('modalTitle'), modalText=document.getElementById('modalText'), modalDetail=document.getElementById('modalDetail'), modalFormula=document.getElementById('modalFormula'), modalCountdown=document.getElementById('modalCountdown'), modalOkBtn=document.getElementById('modalOkBtn'), modalShowFormulaBtn=document.getElementById('modalShowFormulaBtn');
+
+const gameOverOverlay=document.getElementById('gameOverOverlay'), finalScoreText=document.getElementById('finalScoreText'), finalSummary=document.getElementById('finalSummary'), gameOverRestartBtn=document.getElementById('gameOverRestartBtn');
+
+const welcomeGifEl = document.getElementById('welcomeGif');
+const logoWrap = document.getElementById('logoWrap');
+
+/* ====== Helpers ====== */
+function updateUI(){ timeLeftEl.textContent = timeLeft + 's'; levelEl.textContent = level; scoreEl.textContent = score; }
+function showMessage(t){ messageBox.textContent = t; statusMsg.textContent = t; }
+function setInputEnabled(enabled){ answerInput.disabled = !enabled; btnCheck.disabled = !enabled; answerInput.style.opacity = enabled ? '1' : '0.6'; btnCheck.style.opacity = enabled ? '1' : '0.7'; if(enabled) answerInput.focus(); }
+
+/* image loader with fallbacks */
+function loadImageWithFallback(basename, onLoad, onError){
+  const candidates = [`images/${basename}`, `./images/${basename}`, `./${basename}`, basename, `assets/${basename}`, `./assets/${basename}`];
+  let i=0;
+  function tryNext(){
+    if(i>=candidates.length){ if(onError) onError(); return; }
+    const src=candidates[i++];
+    const img = new Image();
+    img.src = src;
+    img.alt = basename;
+    img.onload = ()=> onLoad(img, src);
+    img.onerror = ()=> tryNext();
+  }
+  tryNext();
+}
+function renderNetForCurrent(){
+  if(!current){ net.innerHTML=''; return; }
+  const imgKey = current.id;
+  const basename = IMAGE_MAP[imgKey];
+  if(!basename){ net.innerHTML='<div style="color:var(--muted)">Sem imagem definida</div>'; return; }
+  net.innerHTML = '<div style="color:var(--muted)">Carregando imagem…</div>';
+  loadImageWithFallback(basename, (img)=>{
+    img.style.opacity='0'; img.style.transform='scale(0.98)'; img.className=''; img.style.display='block';
+    img.style.width='auto'; img.style.height='90%'; img.style.objectFit='contain';
+    net.innerHTML=''; net.appendChild(img);
+    requestAnimationFrame(()=> img.classList.add('fade-in'));
+  }, ()=>{
+    net.innerHTML = `<svg width="260" height="180" viewBox="0 0 260 180" xmlns="http://www.w3.org/2000/svg" style="opacity:0.9">
+      <rect x="6" y="10" width="248" height="160" fill="#0b1220" stroke="#1f2937" rx="8"/>
+      <text x="50%" y="50%" fill="#9aa7bf" font-size="14" text-anchor="middle" dominant-baseline="middle">Imagem não encontrada</text>
+    </svg>`;
+  });
+}
+
+/* formulas */
+function safeNum(x){ return Number(x).toFixed(2); }
+function formulaTextFor(item, paramsArr, expected){
+  const unit = item.type === 'volume' ? 'cm³' : 'cm²';
+  if(item.type === 'volume'){
+    switch(item.id){
+      case 'cube': { const a=paramsArr[0]; return `Fórmula: V = a³\n\nSubstituição:\nV = ${a}³ = ${safeNum(expected)} ${unit}`; }
+      case 'rectprism': { const [l,w,h]=paramsArr; return `Fórmula: V = comprimento × largura × altura\n\nSubstituição:\nV = ${l} × ${w} × ${h} = ${safeNum(expected)} ${unit}`; }
+      case 'cylinder': { const [r,h]=paramsArr; return `Fórmula: V = π × r² × altura\n\nSubstituição:\nV = ${PI} × ${r}² × ${h} = ${safeNum(expected)} ${unit}`; }
+      case 'cone': { const [r,h]=paramsArr; return `Fórmula: V = (π × r² × altura) / 3\n\nSubstituição:\nV = (${PI} × ${r}² × ${h}) / 3 = ${safeNum(expected)} ${unit}`; }
+      case 'pyramid': { const [a,h]=paramsArr; return `Fórmula: V = (a² × altura) / 3\n\nSubstituição:\nV = (${a}² × ${h}) / 3 = ${safeNum(expected)} ${unit}`; }
+      case 'sphere': { const [r]=paramsArr; return `Fórmula: V = (4/3) × π × r³\n\nSubstituição:\nV = (4/3) × ${PI} × ${r}³ = ${safeNum(expected)} ${unit}`; }
+    }
+  } else {
+    switch(item.id){
+      case 'square': { const a=paramsArr[0]; return `Fórmula: A = a²\n\nSubstituição:\nA = ${a}² = ${safeNum(expected)} ${unit}`; }
+      case 'rectangle': { const [l,w]=paramsArr; return `Fórmula: A = comprimento × largura\n\nSubstituição:\nA = ${l} × ${w} = ${safeNum(expected)} ${unit}`; }
+      case 'circle': { const r=paramsArr[0]; return `Fórmula: A = π × r²\n\nSubstituição:\nA = ${PI} × ${r}² = ${safeNum(expected)} ${unit}`; }
+      case 'triangle': { const [b,h]=paramsArr; return `Fórmula: A = (base × altura) / 2\n\nSubstituição:\nA = (${b} × ${h}) / 2 = ${safeNum(expected)} ${unit}`; }
+    }
+  }
+  return `Valor: ${safeNum(expected)}`;
+}
+function makeMathShort(formulaText){ return formulaText.replace(/\baltura\b/ig,'h'); }
+
+/* animated icons */
+function getCheckSVG(){ return `<span class="animated-icon icon-bounce"><svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><circle class="icon-bg-circle" cx="32" cy="32" r="30" fill="#ecfdf5"></circle><path class="draw-path" d="M16 34 L28 46 L48 18" stroke="#059669" stroke-width="4.2" fill="none" /><g class="check-glow"><circle cx="32" cy="32" r="18" fill="none" stroke="#bbf7d0" stroke-width="1.6" opacity="0.6"/></g></svg></span>`; }
+function getCrossSVG(){ return `<span class="animated-icon icon-shake"><svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><circle class="icon-bg-circle" cx="32" cy="32" r="30" fill="#fff1f2"></circle><path class="draw-path" d="M20 20 L44 44" stroke="#ef4444" stroke-width="4.2" fill="none" /><path class="draw-path" style="animation-delay:.08s" d="M44 20 L20 44" stroke="#ef4444" stroke-width="4.2" fill="none" /></svg></span>`; }
+function showAnimatedIcon(kind){ const el=document.getElementById('modalIcon'); if(!el) return; el.innerHTML = (kind==='correct'?getCheckSVG():getCrossSVG()); const span = el.querySelector('.animated-icon'); if(span){ const parent=el; parent.removeChild(span); setTimeout(()=> parent.appendChild(span),10); } }
+
+/* countdown for modal */
+function startModalCountdown(delayMs){
+  if(running){ pausedByModal = true; running = false; }
+  if(modalInterval) clearInterval(modalInterval);
+  if(nextTimeout) clearTimeout(nextTimeout);
+  let remaining = Math.ceil(delayMs/1000);
+  modalCountdown.textContent = `Próxima em ${remaining}s`;
+  modalInterval = setInterval(()=> {
+    remaining -= 1;
+    modalCountdown.textContent = remaining>0 ? `Próxima em ${remaining}s` : 'Indo para a próxima...';
+    if(remaining<=0){ clearInterval(modalInterval); modalInterval=null; }
+  },1000);
+  nextTimeout = setTimeout(()=> { if(modalInterval) clearInterval(modalInterval); modalInterval=null; nextTimeout=null; closeModalAndContinue(); }, delayMs);
+}
+
+/* open/close modal */
+function openModal({type, expected, unitLabel, pointsDelta}){
+  if(modalInterval) clearInterval(modalInterval);
+  if(nextTimeout) clearTimeout(nextTimeout);
+  if(type==='correct'){ showAnimatedIcon('correct'); modalTitle.textContent='Parabéns!'; modalText.textContent=`Você acertou! +${pointsDelta} pontos`; try{ playSuccess(); playLevelUp(); }catch(e){} }
+  else { showAnimatedIcon('wrong'); modalTitle.textContent='Atenção'; modalText.textContent='Resposta incorreta'; try{ playFail(); }catch(e){} }
+  modalDetail.textContent = `${unitLabel} = ${Number(expected).toFixed(2)}`;
+  modalFormula.textContent = formulaTextFor(current, params, expected);
+  modalFormula.style.display='none';
+  modalShowFormulaBtn.textContent='Mostrar fórmula';
+  resultOverlay.classList.add('show'); resultOverlay.style.opacity=1; resultOverlay.style.pointerEvents='auto';
+  startModalCountdown(DELAY_MS);
+}
+function closeModalAndContinue(){
+  resultOverlay.classList.remove('show'); resultOverlay.style.opacity=0; resultOverlay.style.pointerEvents='none';
+  if(modalInterval) clearInterval(modalInterval); modalInterval=null;
+  if(nextTimeout) clearTimeout(nextTimeout); nextTimeout=null;
+  if(pausedByModal){ pausedByModal=false; running=true; }
+  if(running && timeLeft>0) nextChallenge(); else setInputEnabled(false);
+}
+
+/* game over */
+function showGameOverModal(){
+  resultOverlay.classList.remove('show');
+  if(modalInterval) clearInterval(modalInterval);
+  if(nextTimeout) clearTimeout(nextTimeout);
+  finalScoreText.textContent = `Sua pontuação: ${score}`;
+  let rec='';
+  if(Object.keys(perShapeErrors).length===0) rec='Boa revisão! Continue praticando.';
+  else { const worst = Object.entries(perShapeErrors).sort((a,b)=> b[1]-a[1]).slice(0,2).map(x=> x[0]).join(', '); rec=`Reveja: ${worst}.`; }
+  finalSummary.textContent = `Acertos: ${correctCount} • Erros: ${incorrectCount}. ${rec}`;
+  gameOverOverlay.classList.add('show'); gameOverOverlay.style.opacity=1; gameOverOverlay.style.pointerEvents='auto';
+}
+function hideGameOverModalAndRestart(){
+  gameOverOverlay.classList.remove('show'); gameOverOverlay.style.opacity=0; gameOverOverlay.style.pointerEvents='none';
+  resultOverlay.classList.remove('show'); resultOverlay.style.opacity=0; resultOverlay.style.pointerEvents='none';
+  introOverlay.classList.remove('show'); introOverlay.style.opacity=0; introOverlay.style.pointerEvents='none';
+  creditsOverlay.classList.remove('show'); creditsOverlay.style.opacity=0; creditsOverlay.style.pointerEvents='none';
+  running = true; timeLeft = INITIAL_TIME; level = 1; score = 0;
+  totalQuestions = 0; correctCount = 0; incorrectCount = 0;
+  for(const k in perShapeErrors) delete perShapeErrors[k];
+  updateUI(); nextChallenge(); showMessage('Jogo reiniciado. Boa sorte!');
+}
+
+/* modal buttons */
+modalOkBtn.addEventListener('click', ()=> { if(nextTimeout) clearTimeout(nextTimeout); if(modalInterval) clearInterval(modalInterval); closeModalAndContinue(); });
+modalShowFormulaBtn.addEventListener('click', ()=> {
+  if(!modalFormula) return;
+  if(modalFormula.style.display==='none' || modalFormula.style.display===''){ modalFormula.textContent = makeMathShort(modalFormula.textContent); modalFormula.style.display='block'; modalShowFormulaBtn.textContent='Ocultar fórmula'; } else { modalFormula.style.display='none'; modalShowFormulaBtn.textContent='Mostrar fórmula'; }
+});
+
+/* credits/intro controls */
+creditsCloseBtn.addEventListener('click', ()=> { creditsOverlay.classList.remove('show'); creditsOverlay.style.opacity=0; creditsOverlay.style.pointerEvents='none'; });
+function showIntro(){ introOverlay.classList.add('show'); introOverlay.style.opacity=1; introOverlay.style.pointerEvents='auto'; introStartBtn.focus(); introRulesCard.style.display='none'; }
+function hideIntro(){ introOverlay.classList.remove('show'); introOverlay.style.opacity=0; introOverlay.style.pointerEvents='none'; }
+
+introStartBtn.addEventListener('click', ()=> {
+  hideIntro();
+  creditsOverlay.classList.remove('show'); creditsOverlay.style.opacity=0; creditsOverlay.style.pointerEvents='none';
+  running = true; timeLeft = INITIAL_TIME; level = 1; score = 0;
+  updateUI(); nextChallenge(); showMessage('Jogo iniciado. Boa sorte!');
+});
+introRulesBtn.addEventListener('click', ()=> { introRulesCard.style.display = introRulesCard.style.display === 'block' ? 'none' : 'block'; });
+introCreditsBtn.addEventListener('click', ()=> { creditsOverlay.classList.add('show'); creditsOverlay.style.opacity=1; creditsOverlay.style.pointerEvents='auto'; });
+
+/* next challenge generator */
+function nextChallenge(){
+  if(nextTimeout) clearTimeout(nextTimeout); nextTimeout=null;
+  currentMode = (Math.random() < 0.6) ? 'volume' : 'area';
+  if(currentMode === 'volume'){
+    current = SOLIDS[Math.floor(Math.random()*SOLIDS.length)];
+    params = current.param.map(()=> Math.floor(Math.random()*6)+1);
+    qTitle.textContent = `Nível ${level}: calcule o volume do ${current.name}`;
+    sHint.textContent = current.hint;
+    pList.textContent = current.param.map((p,i)=> `${paramNamesMap[p]||p}: ${params[i]} cm`).join(' • ');
+  } else {
+    current = AREAS[Math.floor(Math.random()*AREAS.length)];
+    params = current.param.map(()=> Math.floor(Math.random()*6)+1);
+    qTitle.textContent = `Nível ${level}: calcule a área do ${current.name}`;
+    sHint.textContent = `Calcule a área do ${current.name.toLowerCase()}`;
+    pList.textContent = current.param.map((p,i)=> `${paramNamesMap[p]||p}: ${params[i]} cm`).join(' • ');
+  }
+  renderNetForCurrent();
+  answerInput.value = '';
+  setInputEnabled(true);
+  showMessage(`Nível ${level}: responda a questão acima.`);
+}
+
+/* check answer */
+function checkAnswer(){
+  if(!current) return;
+  let expected, unitLabel;
+  if(currentMode === 'volume'){ expected = current.volume(...params); unitLabel='Volume'; }
+  else { expected = current.area(...params); unitLabel='Área'; }
+  const userValue = parseFloat(answerInput.value);
+  const tolerance = Math.max(0.2, Math.abs(expected)*0.02);
+  setInputEnabled(false);
+  totalQuestions++;
+  if(Number.isFinite(userValue) && Math.abs(userValue-expected) <= tolerance){
+    const delta = 15 * level;
+    score += delta; correctCount++;
+    openModal({type:'correct', expected, unitLabel: `${unitLabel} (${currentMode==='volume'?'cm³':'cm²'})`, pointsDelta: delta});
+    level += 1; timeLeft += TIME_BONUS;
+  } else {
+    incorrectCount++; perShapeErrors[current.id] = (perShapeErrors[current.id] || 0) + 1;
+    score = Math.max(0, score - 5);
+    openModal({type:'wrong', expected, unitLabel: `${unitLabel} (${currentMode==='volume'?'cm³':'cm²'})`});
+  }
+  updateUI();
+}
+
+/* timer */
+function tick(){ if(!running) return; timeLeft -= 1; if(timeLeft <= 0){ running=false; if(modalInterval) clearInterval(modalInterval); if(nextTimeout) clearTimeout(nextTimeout); resultOverlay.classList.remove('show'); showGameOverModal(); showMessage(finalMessage()); setInputEnabled(false);} updateUI(); }
+function finalMessage(){ return `⏰ Tempo esgotado! Sua pontuação final: ${score}`; }
+
+/* events */
+btnCheck.addEventListener('click', checkAnswer);
+answerInput.addEventListener('keydown', (e)=> { if(e.key === 'Enter') checkAnswer(); });
+gameOverRestartBtn.addEventListener('click', hideGameOverModalAndRestart);
+
+/* init UI */
+updateUI(); showMessage('Clique em "Começar" no modal de boas-vindas para iniciar.');
+setInterval(tick, 1000);
+document.addEventListener('visibilitychange', ()=> { if(document.hidden) running=false; else if(!document.hidden && timeLeft>0) running=true; });
+
+/* audio (optional) */
+let audioCtx=null;
+function ensureAudio(){ if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+function playSuccess(){ try{ ensureAudio(); const ctx=audioCtx,t=ctx.currentTime; const o1=ctx.createOscillator(); o1.type='sine'; o1.frequency.value=880; const o2=ctx.createOscillator(); o2.type='sine'; o2.frequency.value=1320; const g=ctx.createGain(); g.gain.value=0.0001; o1.connect(g); o2.connect(g); g.connect(ctx.destination); g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.18,t+0.01); o1.start(t); o2.start(t); g.gain.exponentialRampToValueAtTime(0.0001,t+0.35); o1.stop(t+0.37); o2.stop(t+0.37);}catch(e){} }
+function playFail(){ try{ ensureAudio(); const ctx=audioCtx,t=ctx.currentTime; const o=ctx.createOscillator(); o.type='sawtooth'; o.frequency.value=160; const g=ctx.createGain(); g.gain.value=0.0001; o.connect(g); g.connect(ctx.destination); g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.18,t+0.01); o.start(t); g.gain.exponentialRampToValueAtTime(0.0001,t+0.5); o.stop(t+0.52);}catch(e){} }
+function playLevelUp(){ try{ ensureAudio(); const ctx=audioCtx,t=ctx.currentTime; [660,880,1100].forEach((f,i)=>{ const o=ctx.createOscillator(); o.type='triangle'; o.frequency.value=f; const g=ctx.createGain(); o.connect(g); g.connect(ctx.destination); g.gain.setValueAtTime(0.0001,t+i*0.06); g.gain.exponentialRampToValueAtTime(0.18,t+i*0.06+0.01); g.gain.exponentialRampToValueAtTime(0.0001,t+i*0.06+0.22); o.start(t+i*0.06); o.stop(t+i*0.06+0.24); }); }catch(e){} }
+
+/* Load welcome GIF and logo robustly */
+(function loadWelcome(){
+  const WELCOME='sejabemvindo.gif';
+  const cands=[`images/${WELCOME}`, `./images/${WELCOME}`, `./${WELCOME}`, WELCOME];
+  let i=0;
+  function next(){ if(i>=cands.length){ welcomeGifEl.style.display='none'; const wrap=welcomeGifEl.parentElement; wrap.innerHTML=`<div style="padding:20px;color:var(--muted)">Coloque ${WELCOME} em /images/ para mostrar o GIF.</div>`; return; } const src=cands[i++]; const img=new Image(); img.src=src + '?v='+Date.now(); img.onload = ()=> { welcomeGifEl.src = src; welcomeGifEl.style.display='block'; welcomeGifEl.style.opacity=0; setTimeout(()=> welcomeGifEl.style.transition='opacity .45s ease',10); setTimeout(()=> welcomeGifEl.style.opacity=1,30); }; img.onerror = ()=> next(); } next();
+})();
+(function loadLogo(){
+  const cands=['images/geo.gif','./images/geo.gif','./geo.gif','geo.gif'];
+  let i=0;
+  function next(){ if(i>=cands.length){ const fallback = document.createElement('div'); fallback.className='logo-fallback'; fallback.textContent='GEO'; logoWrap.innerHTML=''; logoWrap.appendChild(fallback); return; } const src=cands[i++]; const img=new Image(); img.src=src + '?v='+Date.now(); img.onload = ()=> { img.style.borderRadius='10px'; img.style.objectFit='cover'; img.style.width='56px'; img.style.height='56px'; logoWrap.innerHTML=''; logoWrap.appendChild(img); }; img.onerror = ()=> next(); } next();
+})();
+
+/* accessibility: Esc closes overlays */
+document.addEventListener('keydown', (e)=> {
+  if(e.key === 'Escape'){
+    if(creditsOverlay.classList.contains('show')){ creditsOverlay.classList.remove('show'); creditsOverlay.style.opacity=0; creditsOverlay.style.pointerEvents='none'; }
+    if(resultOverlay.classList.contains('show')){ resultOverlay.classList.remove('show'); resultOverlay.style.opacity=0; resultOverlay.style.pointerEvents='none'; }
+  }
+});
+</script>
+</body>
+</html>
